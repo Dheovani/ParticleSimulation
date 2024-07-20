@@ -37,5 +37,6 @@ cmake --build .
 This project is licensed under the [MIT License](LICENSE.txt) - see the LICENSE file for details.
 
 ## 📼 Simulation
+https://github.com/user-attachments/assets/ea374a3e-add6-48c2-b1a6-5e6e69a1c373
 
 Thank you for checking out the Particle Simulator! Have fun experimenting with particles and happy coding! 😄👨‍💻👩‍💻
