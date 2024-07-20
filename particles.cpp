@@ -13,9 +13,9 @@ const sf::Color Simulation::GetRandColor() noexcept(false)
 {
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_int_distribution<> dis(1, 7);
+	std::uniform_int_distribution<> dist(1, 7);
 
-	switch (dis(gen)) {
+	switch (dist(gen)) {
 	case White:
 		return sf::Color::White;
 
@@ -47,7 +47,7 @@ const Particle Simulation::GenParticle() noexcept(false)
 {
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_int_distribution<size_t> dist(5, 95);
+	std::uniform_int_distribution<size_t> dist(0, 100);
 
 	float x = (float)dist(gen) * 10, y = (float)dist(gen) * 10;
 	y = y > window_height ? (y - window_height) : y;
@@ -93,6 +93,8 @@ void Simulation::ApplyPhysics(Particle& particle, float dTime, sf::Vector2u wind
 		particle.position.y = (float)windowSize.y - 10;
 		particle.velocity.y = -(particle.velocity.y / 2);
 	}
+
+	particle.acceleration = sf::Vector2f(0, 98);
 }
 
 void Simulation::DealWithCollisions(Particle& particle) noexcept(true)
@@ -127,6 +129,22 @@ SWindow Simulation::GetWindow() noexcept(true)
 	return window;
 }
 
+void Simulation::AttractParticles(Particle& particle, sf::Vector2i mPos) noexcept(true)
+{
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<size_t> dist(1, 10);
+
+	sf::Vector2f direction = (sf::Vector2f)mPos - particle.position;
+	float distance = std::sqrt(direction.x * direction.x + direction.y * direction.y);
+
+	if (distance > 0) {
+		direction /= distance;
+		float factor = dist(gen);
+		particle.acceleration = direction * 200.0f * factor;
+	}
+}
+
 void Simulation::Run(const SWindow& window) noexcept(false)
 {
 	if (particles.empty()) {
@@ -142,17 +160,21 @@ void Simulation::Run(const SWindow& window) noexcept(false)
 		while (window->pollEvent(event)) {
 			if (event.type == sf::Event::Closed)
 				window->close();
-			else
-				window->close(); // TODO: Move particles according to mouse movemente
+			else if (event.type == sf::Event::MouseButtonPressed) {
+				auto pos = sf::Mouse::getPosition(*window.get());
+
+				for (Particle& particle : particles)
+					AttractParticles(particle, pos);
+			}
 		}
 
 		float deltaTime = clock.restart().asSeconds();
 		window->clear(sf::Color::Black);
 
-		for (Particle& ptc : particles) {
-			ApplyPhysics(ptc, deltaTime, window->getSize());
-			DealWithCollisions(ptc);
-			DrawParticle(ptc, window);
+		for (Particle& particle : particles) {
+			ApplyPhysics(particle, deltaTime, window->getSize());
+			DealWithCollisions(particle);
+			DrawParticle(particle, window);
 		}
 
 		window->display();

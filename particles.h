@@ -65,6 +65,9 @@ namespace Simulation
 	// Checks for collisions between particles and updates their direction
 	void DealWithCollisions(Particle& particle) noexcept(true);
 
+	// Send all particles in the direction of the mouse
+	void AttractParticles(Particle& particle, sf::Vector2i mPos) noexcept(true);
+
 	// Generates the simulation's window
 	SWindow GetWindow() noexcept(true);
 
