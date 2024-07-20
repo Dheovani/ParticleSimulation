@@ -1,7 +1,11 @@
 #include "particles.h"
 #include <random>
-#include <vector>
 #include <exception>
+
+namespace Simulation
+{
+	std::vector<Particle> particles = {};
+}
 
 using namespace Simulation;
 
@@ -42,15 +46,15 @@ const sf::Color Simulation::GetRandColor() noexcept(false)
 const Particle Simulation::GenParticle() noexcept(false)
 {
 	std::random_device rd;
-	std::mt19937 generator(rd());
-	std::uniform_int_distribution<size_t> distribution(5, 95);
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<size_t> dist(5, 95);
 
-	float x = (float)distribution(generator) * 10, y = (float)distribution(generator) * 10;
+	float x = (float)dist(gen) * 10, y = (float)dist(gen) * 10;
 	y = y > window_height ? (y - window_height) : y;
 
 	Particle particle;
 	particle.position = sf::Vector2f(x, y);
-	particle.velocity = sf::Vector2f(0, -150);
+	particle.velocity = sf::Vector2f((float)dist(gen), -150);
 	particle.acceleration = sf::Vector2f(0, 98);
 	particle.color = GetRandColor();
 
@@ -91,6 +95,28 @@ void Simulation::ApplyPhysics(Particle& particle, float dTime, sf::Vector2u wind
 	}
 }
 
+void Simulation::DealWithCollisions(Particle& particle) noexcept(true)
+{
+	for (Particle& other : particles) {
+		if (particle != other) {
+			sf::Vector2f delta = particle.position - other.position;
+			float distance = std::sqrt(delta.x * delta.x + delta.y * delta.y);
+
+			if (distance < 10) {
+				sf::Vector2f normal = delta / distance;
+				float relativeVelocity = (particle.velocity - other.velocity).x * normal.x + (particle.velocity - other.velocity).y * normal.y;
+
+				if (relativeVelocity < 0) {
+					float coefficientOfRestitution = 0.8f;
+					sf::Vector2f impulse = (1 + coefficientOfRestitution) * relativeVelocity / 2 * normal;
+					particle.velocity -= impulse;
+					other.velocity += impulse;
+				}
+			}
+		}
+	}
+}
+
 SWindow Simulation::GetWindow() noexcept(true)
 {
 	auto window = std::make_shared<sf::RenderWindow>(
@@ -103,9 +129,10 @@ SWindow Simulation::GetWindow() noexcept(true)
 
 void Simulation::Run(const SWindow& window) noexcept(false)
 {
-	std::vector<Particle> particles;
-	for (int i = 0; i < PARTICLE_AMOUNT; ++i)
-		particles.push_back(GenParticle());
+	if (particles.empty()) {
+		for (int i = 0; i < PARTICLE_AMOUNT; ++i)
+			particles.push_back(GenParticle());
+	}
 
 	sf::Clock clock;
 	while (window->isOpen()) {
@@ -116,7 +143,7 @@ void Simulation::Run(const SWindow& window) noexcept(false)
 			if (event.type == sf::Event::Closed)
 				window->close();
 			else
-				return; // TODO: Move particles according to mouse movemente
+				window->close(); // TODO: Move particles according to mouse movemente
 		}
 
 		float deltaTime = clock.restart().asSeconds();
@@ -124,6 +151,7 @@ void Simulation::Run(const SWindow& window) noexcept(false)
 
 		for (Particle& ptc : particles) {
 			ApplyPhysics(ptc, deltaTime, window->getSize());
+			DealWithCollisions(ptc);
 			DrawParticle(ptc, window);
 		}
 

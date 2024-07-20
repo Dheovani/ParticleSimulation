@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <memory>
 #include <SFML/Graphics.hpp>
 
@@ -7,12 +8,12 @@
 #define PARTICLE_AMOUNT 1000
 #endif // !PARTICLE_AMOUNT
 
-typedef std::shared_ptr<sf::RenderWindow> SWindow;
-
 namespace Simulation
 {
 	constexpr uint64_t window_width = 1000;
 	constexpr uint64_t window_height = 600;
+
+	typedef std::shared_ptr<sf::RenderWindow> SWindow;
 
 	// Particle colors
 	enum PColor : int
@@ -27,10 +28,6 @@ namespace Simulation
 		Cyan = 7
 	};
 
-	// Generates a random number corresponding to one of the 
-	// PColor enum's values from 1 to 7 (Background is black)
-	const sf::Color GetRandColor() noexcept(false);
-
 	typedef struct Particle
 	{
 		sf::Vector2f position;
@@ -43,8 +40,19 @@ namespace Simulation
 		{
 			return position == other.position;
 		}
+
+		bool operator!=(const Particle& other) const
+		{
+			return position != other.position;
+		}
 	} Particle;
 	
+	extern std::vector<Particle> particles;
+
+	// Generates a random number corresponding to one of the 
+	// PColor enum's values from 1 to 7 (Background is black)
+	const sf::Color GetRandColor() noexcept(false);
+
 	// Generates a particle
 	const Particle GenParticle() noexcept(false);
 
@@ -53,6 +61,9 @@ namespace Simulation
 
 	// Apply pshysics to the particles, according to their acceleration and time
 	void ApplyPhysics(Particle& particle, float dTime, sf::Vector2u windowSize) noexcept(true);
+
+	// Checks for collisions between particles and updates their direction
+	void DealWithCollisions(Particle& particle) noexcept(true);
 
 	// Generates the simulation's window
 	SWindow GetWindow() noexcept(true);
