@@ -155,7 +155,6 @@ void Simulation::Run(const SWindow& window) noexcept(false)
 	sf::Clock clock;
 	while (window->isOpen()) {
 		sf::Event event;
-		sf::Vector2i beginDrag, endDrag;
 
 		while (window->pollEvent(event)) {
 			if (event.type == sf::Event::Closed)
